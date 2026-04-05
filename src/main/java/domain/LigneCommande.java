@@ -2,14 +2,13 @@ package domain;
 
 public class LigneCommande {
     private Long menuId;
-    private String menuNom; // Snapshot du nom au moment de la commande
+    private String menuNom;
     private Integer quantite;
-    private Double prixUnitaire; // Snapshot du prix au moment de la commande
-    private Double prixLigne; // prixUnitaire * quantite
+    private Double prixUnitaire;
+    private Double prixLigne;
 
     public LigneCommande() {}
 
-    // Getters et Setters
     public Long getMenuId() { return menuId; }
     public void setMenuId(Long menuId) { this.menuId = menuId; }
     public String getMenuNom() { return menuNom; }

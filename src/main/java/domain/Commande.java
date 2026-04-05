@@ -6,16 +6,15 @@ import java.util.List;
 
 public class Commande {
     private Long id;
-    private Long abonneId; // FK vers API Plats et Utilisateurs
-    private LocalDateTime dateCommande; // Horodatage serveur
+    private Long abonneId;
+    private LocalDateTime dateCommande;
     private String adresseLivraison;
     private LocalDate dateLivraison;
     private List<LigneCommande> lignes;
-    private Double prixTotal; // Calculé côté serveur
+    private Double prixTotal;
 
-    public Commande() {} // Nécessaire pour Jakarta JSON Binding [cite: 527]
+    public Commande() {}
 
-    // Getters et Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public Long getAbonneId() { return abonneId; }

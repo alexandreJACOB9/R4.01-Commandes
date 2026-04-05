@@ -12,7 +12,6 @@ import java.util.List;
 @Consumes(MediaType.APPLICATION_JSON)
 public class CommandeRessource {
 
-    // Injection (ou instanciation simple pour le TP) du service
     private CommandeService service = new CommandeService();
 
     @GET
@@ -29,5 +28,26 @@ public class CommandeRessource {
             return Response.status(Response.Status.NOT_FOUND)
                     .entity("Erreur métier : " + e.getMessage()).build();
         }
+    }
+    @GET @Path("/{id}")
+    public Response getById(@PathParam("id") Long id) {
+        return service.recupererParId(id)
+                .map(c -> Response.ok(c).build())
+                .orElse(Response.status(Response.Status.NOT_FOUND).build());
+    }
+
+    @PUT @Path("/{id}")
+    public Response update(@PathParam("id") Long id, CommandeUpdateInput input) {
+        return service.modifierCommande(id, input)
+                .map(c -> Response.ok(c).build())
+                .orElse(Response.status(Response.Status.NOT_FOUND).build());
+    }
+
+    @DELETE @Path("/{id}")
+    public Response delete(@PathParam("id") Long id) {
+        if (service.supprimerCommande(id)) {
+            return Response.noContent().build(); // 204 No Content
+        }
+        return Response.status(Response.Status.NOT_FOUND).build();
     }
 }
