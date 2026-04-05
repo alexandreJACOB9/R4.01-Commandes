@@ -12,7 +12,7 @@ import java.util.List;
 @Consumes(MediaType.APPLICATION_JSON)
 public class CommandeRessource {
 
-    private CommandeService service = new CommandeService();
+    private final CommandeService service = new CommandeService(new InMemoryCommandeRepository());
 
     @GET
     public List<Commande> getAll(@QueryParam("abonneId") Long abonneId) {
