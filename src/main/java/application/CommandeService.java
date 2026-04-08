@@ -14,18 +14,15 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class CommandeService {
-    private static List<Commande> database = new ArrayList<>();
-    private static AtomicLong idGenerator = new AtomicLong(1);
     private final CommandeRepository repository;
 
     public CommandeService(CommandeRepository repository) {
         this.repository = repository;
     }
 
-    public Commande validerEtCreer(CommandeInput input) throws Exception {
+    public Commande creerCommande(CommandeInput input) throws Exception {
         if (LocalDate.parse(input.dateLivraison).isBefore(LocalDate.now())) {
             throw new IllegalArgumentException("La date de livraison ne peut pas être passée.");
         }
@@ -41,7 +38,7 @@ public class CommandeService {
             List<LigneCommande> lignes = new ArrayList<>();
             double total = 0;
 
-            for (var lin : input.lignes) {
+            for (LigneCommandeInput lin : input.lignes) {
                 JsonObject menu = client.target("http://localhost:3004/menus")
                         .path(lin.menuId.toString())
                         .request(MediaType.APPLICATION_JSON)
@@ -59,74 +56,35 @@ public class CommandeService {
             }
             cmd.setLignes(lignes);
             cmd.setPrixTotal(total);
+
             return repository.save(cmd);
         } finally { client.close(); }
     }
 
-    public List<Commande> listerTout() { return repository.findAll(); }
-    public Optional<Commande> trouver(Long id) { return repository.findById(id); }
-    public boolean annuler(Long id) { return repository.deleteById(id); }
-
-    public List<Commande> listerToutesLesCommandes(Long abonneId) {
+    public List<Commande> lister(Long abonneId) {
+        List<Commande> all = repository.findAll();
         if (abonneId != null) {
-            return database.stream().filter(c -> c.getAbonneId().equals(abonneId)).toList();
+            return all.stream().filter(c -> c.getAbonneId().equals(abonneId)).toList();
         }
-        return database;
+        return all;
     }
-    public Optional<Commande> recupererParId(Long id) {
-        return database.stream().filter(c -> c.getId().equals(id)).findFirst();
+
+    public Optional<Commande> trouver(Long id) {
+        return repository.findById(id);
     }
-    public boolean supprimerCommande(Long id) {
-        return database.removeIf(c -> c.getId().equals(id));
+
+    public boolean supprimer(Long id) {
+        return repository.deleteById(id);
     }
-    public Optional<Commande> modifierCommande(Long id, CommandeUpdateInput input) {
-        Optional<Commande> optCmd = recupererParId(id);
-        if (optCmd.isPresent()) {
-            Commande cmd = optCmd.get();
+
+    public Optional<Commande> modifier(Long id, CommandeUpdateInput input) {
+        Optional<Commande> opt = repository.findById(id);
+        if (opt.isPresent()) {
+            Commande cmd = opt.get();
             cmd.setAdresseLivraison(input.adresseLivraison);
             cmd.setDateLivraison(LocalDate.parse(input.dateLivraison));
-            return Optional.of(cmd);
+            return Optional.of(repository.save(cmd));
         }
         return Optional.empty();
-    }
-
-
-    public Commande creerNouvelleCommande(CommandeInput input) throws Exception {
-        Client client = ClientBuilder.newClient();
-        try {
-            Commande cmd = new Commande();
-            cmd.setId(idGenerator.getAndIncrement());
-            cmd.setAbonneId(input.abonneId);
-            cmd.setAdresseLivraison(input.adresseLivraison);
-            cmd.setDateLivraison(LocalDate.parse(input.dateLivraison));
-            cmd.setDateCommande(LocalDateTime.now());
-
-            List<LigneCommande> lignes = new ArrayList<>();
-            double total = 0;
-
-            for (LigneCommandeInput lin : input.lignes) {
-                JsonObject menuData = client.target("http://localhost:3004/menus")
-                        .path(lin.menuId.toString())
-                        .request(MediaType.APPLICATION_JSON)
-                        .get(JsonObject.class);
-
-                LigneCommande lc = new LigneCommande();
-                lc.setMenuId(lin.menuId);
-                lc.setMenuNom(menuData.getString("nom"));
-                lc.setPrixUnitaire(menuData.getJsonNumber("prix").doubleValue());
-                lc.setQuantite(lin.quantite);
-                lc.setPrixLigne(lc.getPrixUnitaire() * lc.getQuantite());
-
-                lignes.add(lc);
-                total += lc.getPrixLigne();
-            }
-
-            cmd.setLignes(lignes);
-            cmd.setPrixTotal(total);
-            database.add(cmd);
-            return cmd;
-        } finally {
-            client.close();
-        }
     }
 }

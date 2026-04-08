@@ -24,6 +24,7 @@
             <version>4.1.0</version>
             <scope>provided</scope>
         </dependency>
+        
         <dependency>
             <groupId>jakarta.json.bind</groupId>
             <artifactId>jakarta.json.bind-api</artifactId>
@@ -60,7 +61,6 @@
             <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
-
     </dependencies>
 
 
