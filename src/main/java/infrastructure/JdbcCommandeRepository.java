@@ -14,7 +14,7 @@ public class JdbcCommandeRepository implements CommandeRepository {
 
     private Connection getConnection() throws SQLException {
         try {
-            Class.forName("com.mysql.cj.jdbc.Driver"); // Force le chargement du driver
+            Class.forName("com.mysql.cj.jdbc.Driver");
         } catch (ClassNotFoundException e) { e.printStackTrace(); }
         return DriverManager.getConnection(url, user, password);
     }
@@ -49,7 +49,7 @@ public class JdbcCommandeRepository implements CommandeRepository {
         List<Commande> list = new ArrayList<>();
         try (Connection conn = getConnection();
              Statement st = conn.createStatement();
-             ResultSet rs = st.executeQuery("SELECT * FROM commandes")) {
+             ResultSet rs = st.executeQuery("SELECT * FROM commande")) {
             while (rs.next()) {
                 Commande c = new Commande();
                 c.setId(rs.getLong("id"));
