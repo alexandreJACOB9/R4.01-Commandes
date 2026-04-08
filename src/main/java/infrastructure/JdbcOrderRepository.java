@@ -1,13 +1,16 @@
 package infrastructure;
 
-import application.CommandeRepository;
-import domain.Commande;
+import application.OrderRepository;
+import domain.Order;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public class JdbcCommandeRepository implements CommandeRepository {
+/**
+ * Implementation JDBC du depot des commandes.
+ */
+public class JdbcOrderRepository implements OrderRepository {
     private final String url = System.getenv("DB_HOST");
     private final String user = System.getenv("DB_USER");
     private final String password = System.getenv("DB_PASS");
@@ -20,50 +23,50 @@ public class JdbcCommandeRepository implements CommandeRepository {
     }
 
     @Override
-    public Commande save(Commande c) {
+    public Order save(Order order) {
         String sql = "INSERT INTO commande (abonne_id, date_commande, adresse_livraison, date_livraison, prix_total) VALUES (?, ?, ?, ?, ?)";
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            ps.setLong(1, c.getAbonneId());
-            ps.setTimestamp(2, java.sql.Timestamp.valueOf(c.getDateCommande()));
-            ps.setString(3, c.getAdresseLivraison());
-            ps.setDate(4, java.sql.Date.valueOf(c.getDateLivraison()));
-            ps.setDouble(5, c.getPrixTotal());
+            ps.setLong(1, order.getSubscriberId());
+            ps.setTimestamp(2, java.sql.Timestamp.valueOf(order.getOrderDate()));
+            ps.setString(3, order.getDeliveryAddress());
+            ps.setDate(4, java.sql.Date.valueOf(order.getDeliveryDate()));
+            ps.setDouble(5, order.getTotalPrice());
             int affectedRows = ps.executeUpdate();
 
             if (affectedRows > 0) {
                 try (ResultSet generatedKeys = ps.getGeneratedKeys()) {
                     if (generatedKeys.next()) {
-                        c.setId(generatedKeys.getLong(1));
+                        order.setId(generatedKeys.getLong(1));
                     }
                 }
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return c;
+        return order;
     }
 
     @Override
-    public List<Commande> findAll() {
-        List<Commande> list = new ArrayList<>();
+    public List<Order> findAll() {
+        List<Order> list = new ArrayList<>();
         try (Connection conn = getConnection();
              Statement st = conn.createStatement();
              ResultSet rs = st.executeQuery("SELECT * FROM commande")) {
             while (rs.next()) {
-                Commande c = new Commande();
-                c.setId(rs.getLong("id"));
-                c.setAbonneId(rs.getLong("abonne_id"));
-                c.setAdresseLivraison(rs.getString("adresse_livraison"));
-                list.add(c);
+                Order order = new Order();
+                order.setId(rs.getLong("id"));
+                order.setSubscriberId(rs.getLong("abonne_id"));
+                order.setDeliveryAddress(rs.getString("adresse_livraison"));
+                list.add(order);
             }
         } catch (SQLException e) { e.printStackTrace(); }
         return list;
     }
 
     @Override
-    public Optional<Commande> findById(Long id) {
-        return findAll().stream().filter(c -> c.getId().equals(id)).findFirst();
+    public Optional<Order> findById(Long id) {
+        return findAll().stream().filter(order -> order.getId().equals(id)).findFirst();
     }
 
     @Override

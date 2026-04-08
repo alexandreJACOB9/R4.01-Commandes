@@ -1,0 +1,60 @@
+classDiagram
+    %% Couche Domaine : Le coeur du métier
+    namespace Domain{
+        class Commande {
+            Long id
+            Long abonneId
+            LocalDateTime dateCommande
+            String adresseLivraison
+            LocalDate dateLivraison
+            Double prixTotal
+            List~LigneCommande~ lignes
+        }
+        class LigneCommande {
+            Long menuId
+            String menuNom
+            Integer quantite
+            Double prixUnitaire
+            Double prixLigne
+        }
+    }
+
+    %% Couche Application : La logique métier
+    namespace Application{
+        class CommandeRepository {
+            <<interface>>
+            +save(Commande c) Commande
+            +findAll() List~Commande~
+            +findById(Long id) Optional~Commande~
+            +deleteById(Long id) boolean
+        }
+        class CommandeService {
+            -CommandeRepository repository
+            +creerCommande(CommandeInput input) Commande
+            +lister(Long abonneId) List~Commande~
+            +trouver(Long id) Optional~Commande~
+            +supprimer(Long id) boolean
+        }
+    }
+
+    %% Couche Infrastructure : Adaptateurs (API et BD)
+    namespace infrastructure {
+        class CommandeRessource {
+            -CommandeService service
+            +create(CommandeInput input) Response
+            +getAll(Long abonneId) List~Commande~
+        }
+        class JdbcCommandeRepository {
+            -String url
+            -String user
+            -String password
+            +save(Commande c) Commande
+            +findAll() List~Commande~
+        }
+
+    }
+    %% Relations
+    Commande "1" *-- "*" LigneCommande : contient
+    CommandeService --> CommandeRepository : utilise
+    JdbcCommandeRepository ..|> CommandeRepository : réalise
+    CommandeRessource --> CommandeService : délègue
