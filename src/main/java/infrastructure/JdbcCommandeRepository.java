@@ -21,7 +21,7 @@ public class JdbcCommandeRepository implements CommandeRepository {
 
     @Override
     public Commande save(Commande c) {
-        String sql = "INSERT INTO commandes (abonne_id, date_commande, adresse_livraison, date_livraison, prix_total) VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO commande (abonne_id, date_commande, adresse_livraison, date_livraison, prix_total) VALUES (?, ?, ?, ?, ?)";
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setLong(1, c.getAbonneId());
@@ -69,7 +69,7 @@ public class JdbcCommandeRepository implements CommandeRepository {
     @Override
     public boolean deleteById(Long id) {
         try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement("DELETE FROM commandes WHERE id = ?")) {
+             PreparedStatement ps = conn.prepareStatement("DELETE FROM commande WHERE id = ?")) {
             ps.setLong(1, id);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) { return false; }
