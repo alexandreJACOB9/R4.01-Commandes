@@ -32,6 +32,11 @@ public class Order {
     public void setLines(List<OrderLine> lines) { this.lines = lines; }
     public Double getTotalPrice() { return totalPrice; }
     public void setTotalPrice(Double totalPrice) { this.totalPrice = totalPrice; }
+
+    /**
+     * Calcule le prix total de la commande en additionnant le prix de chaque ligne.
+     * Si la commande ne contient aucune ligne, le prix total est fixé à 0.0.
+     */
     public void calculateTotalPrice() {
         if (this.lines == null || this.lines.isEmpty()) {
             this.totalPrice = 0.0;

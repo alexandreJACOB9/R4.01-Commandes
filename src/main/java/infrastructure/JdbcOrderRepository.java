@@ -35,6 +35,11 @@ public class JdbcOrderRepository implements OrderRepository {
         this.password = props.getProperty("DB_PASS");
     }
 
+    /**
+     * Charge les variables d'environnement depuis le fichier config.env.
+     * * @return Les propriétés de configuration (URL, utilisateur, mot de passe).
+     * @throws RuntimeException Si le fichier est introuvable ou illisible.
+     */
     private Properties loadConfig() {
         Properties props = new Properties();
         try (InputStream input = getClass().getClassLoader().getResourceAsStream("config.env")) {
@@ -48,6 +53,11 @@ public class JdbcOrderRepository implements OrderRepository {
         return props;
     }
 
+    /**
+     * Établit une connexion avec la base de données MariaDB.
+     * * @return L'objet Connection actif.
+     * @throws SQLException En cas d'échec de connexion.
+     */
     private Connection getConnection() throws SQLException {
         return DriverManager.getConnection(url, user, password);
     }
