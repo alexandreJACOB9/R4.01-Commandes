@@ -30,7 +30,6 @@ public class OrderService {
         if (LocalDate.parse(input.deliveryDate).isBefore(LocalDate.now())) {
             throw new IllegalArgumentException("The delivery date cannot be in the past.");
         }
-
         Client client = ClientBuilder.newClient();
         try {
             Order order = new Order();
@@ -38,10 +37,7 @@ public class OrderService {
             order.setDeliveryAddress(input.deliveryAddress);
             order.setDeliveryDate(LocalDate.parse(input.deliveryDate));
             order.setOrderDate(LocalDateTime.now());
-
             List<OrderLine> lines = new ArrayList<>();
-            double total = 0;
-
             for (OrderLineInput lineInput : input.lines) {
                 JsonObject menu = client.target("http://localhost:3004/menus")
                         .path(lineInput.menuId.toString())
@@ -56,11 +52,9 @@ public class OrderService {
                 line.setLinePrice(line.getUnitPrice() * line.getQuantity());
 
                 lines.add(line);
-                total += line.getLinePrice();
             }
             order.setLines(lines);
-            order.setTotalPrice(total);
-
+            order.calculateTotalPrice();
             return repository.save(order);
         } finally {
             client.close();
@@ -93,5 +87,6 @@ public class OrderService {
         }
         return Optional.empty();
     }
+
 }
 

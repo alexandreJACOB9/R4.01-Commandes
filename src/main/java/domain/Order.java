@@ -32,4 +32,13 @@ public class Order {
     public void setLines(List<OrderLine> lines) { this.lines = lines; }
     public Double getTotalPrice() { return totalPrice; }
     public void setTotalPrice(Double totalPrice) { this.totalPrice = totalPrice; }
+    public void calculateTotalPrice() {
+        if (this.lines == null || this.lines.isEmpty()) {
+            this.totalPrice = 0.0;
+            return;
+        }
+        this.totalPrice = this.lines.stream()
+                .mapToDouble(OrderLine::getLinePrice)
+                .sum();
+    }
 }

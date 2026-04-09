@@ -106,7 +106,9 @@ public class JdbcOrderRepository implements OrderRepository {
                 order.setTotalPrice(rs.getDouble("prix_total"));
                 list.add(order);
             }
-        } catch (SQLException e) { e.printStackTrace(); }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
 
         // Récupere les lignes de chaque commande
         if (!list.isEmpty()) {
@@ -130,9 +132,12 @@ public class JdbcOrderRepository implements OrderRepository {
                         }
                     }
                 }
-            } catch (SQLException e) { e.printStackTrace(); }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         }
         return list;
+    }
 
     @Override
     public Optional<Order> findById(Long id) {
