@@ -1,60 +1,85 @@
 classDiagram
-    %% Couche Domaine : Le coeur du métier
-    namespace Domain{
-        class Commande {
-            Long id
-            Long abonneId
-            LocalDateTime dateCommande
-            String adresseLivraison
-            LocalDate dateLivraison
-            Double prixTotal
-            List~LigneCommande~ lignes
+    %% Domain Layer : Core business
+    namespace Domain {
+        class Order {
+            -Long id
+            -Long subscriberId
+            -LocalDateTime orderDate
+            -String deliveryAddress
+            -LocalDate deliveryDate
+            -Double totalPrice
+            -List~OrderLine~ lines
         }
-        class LigneCommande {
-            Long menuId
-            String menuNom
-            Integer quantite
-            Double prixUnitaire
-            Double prixLigne
+        class OrderLine {
+            -Long menuId
+            -String menuName
+            -Integer quantity
+            -Double unitPrice
+            -Double linePrice
         }
     }
 
-    %% Couche Application : La logique métier
-    namespace Application{
-        class CommandeRepository {
+    %% Application Layer : Business logic
+    namespace Application {
+        class OrderRepository {
             <<interface>>
-            +save(Commande c) Commande
-            +findAll() List~Commande~
-            +findById(Long id) Optional~Commande~
+            +save(Order order) Order
+            +findAll() List~Order~
+            +findById(Long id) Optional~Order~
             +deleteById(Long id) boolean
         }
-        class CommandeService {
-            -CommandeRepository repository
-            +creerCommande(CommandeInput input) Commande
-            +lister(Long abonneId) List~Commande~
-            +trouver(Long id) Optional~Commande~
-            +supprimer(Long id) boolean
+        class OrderService {
+            -OrderRepository repository
+            +createOrder(OrderInput input) Order
+            +listOrders(Long subscriberId) List~Order~
+            +findOrder(Long id) Optional~Order~
+            +deleteOrder(Long id) boolean
+            +updateOrder(Long id, OrderUpdateInput input) Optional~Order~
         }
     }
 
-    %% Couche Infrastructure : Adaptateurs (API et BD)
-    namespace infrastructure {
-        class CommandeRessource {
-            -CommandeService service
-            +create(CommandeInput input) Response
-            +getAll(Long abonneId) List~Commande~
+    %% Infrastructure Layer : Adapters (API and DB)
+    namespace Infrastructure {
+        class OrderResource {
+            -OrderService service
+            +getAll(Long subscriberId) List~Order~
+            +create(OrderInput input) Response
+            +getById(Long id) Response
+            +update(Long id, OrderUpdateInput input) Response
+            +delete(Long id) Response
         }
-        class JdbcCommandeRepository {
+        class JdbcOrderRepository {
             -String url
             -String user
             -String password
-            +save(Commande c) Commande
-            +findAll() List~Commande~
+            -loadConfig() Properties
+            -getConnection() Connection
+            +save(Order order) Order
+            +findAll() List~Order~
+            +findById(Long id) Optional~Order~
+            +deleteById(Long id) boolean
         }
-
+        class OrderInput {
+            +Long subscriberId
+            +String deliveryAddress
+            +String deliveryDate
+            +List~OrderLineInput~ lines
+        }
+        class OrderUpdateInput {
+            +String deliveryAddress
+            +String deliveryDate
+        }
+        class OrderLineInput {
+            +Long menuId
+            +Integer quantity
+        }
     }
+
     %% Relations
-    Commande "1" *-- "*" LigneCommande : contient
-    CommandeService --> CommandeRepository : utilise
-    JdbcCommandeRepository ..|> CommandeRepository : réalise
-    CommandeRessource --> CommandeService : délègue
+    Order "1" *-- "*" OrderLine : contains
+    OrderInput "1" *-- "*" OrderLineInput : contains
+    OrderService --> OrderRepository : uses
+    JdbcOrderRepository ..|> OrderRepository : implements
+    OrderResource --> OrderService : delegates
+    OrderService ..> OrderInput : reads
+    OrderService ..> OrderUpdateInput : reads

@@ -2,6 +2,7 @@ package infrastructure;
 
 import application.OrderRepository;
 import domain.Order;
+import domain.OrderLine;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -50,21 +51,37 @@ public class JdbcOrderRepository implements OrderRepository {
 
     @Override
     public Order save(Order order) {
-        String sql = "INSERT INTO commande (abonne_id, date_commande, adresse_livraison, date_livraison, prix_total) VALUES (?, ?, ?, ?, ?)";
+        String sqlOrder = "INSERT INTO commande (abonne_id, date_commande, adresse_livraison, date_livraison, prix_total) VALUES (?, ?, ?, ?, ?)";
         try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            ps.setLong(1, order.getSubscriberId());
-            ps.setTimestamp(2, java.sql.Timestamp.valueOf(order.getOrderDate()));
-            ps.setString(3, order.getDeliveryAddress());
-            ps.setDate(4, java.sql.Date.valueOf(order.getDeliveryDate()));
-            ps.setDouble(5, order.getTotalPrice());
-            int affectedRows = ps.executeUpdate();
+             PreparedStatement psOrder = conn.prepareStatement(sqlOrder, Statement.RETURN_GENERATED_KEYS)) {
 
+            psOrder.setLong(1, order.getSubscriberId());
+            psOrder.setTimestamp(2, java.sql.Timestamp.valueOf(order.getOrderDate()));
+            psOrder.setString(3, order.getDeliveryAddress());
+            psOrder.setDate(4, java.sql.Date.valueOf(order.getDeliveryDate()));
+            psOrder.setDouble(5, order.getTotalPrice());
+            int affectedRows = psOrder.executeUpdate();
             if (affectedRows > 0) {
-                try (ResultSet generatedKeys = ps.getGeneratedKeys()) {
+                try (ResultSet generatedKeys = psOrder.getGeneratedKeys()) {
                     if (generatedKeys.next()) {
                         order.setId(generatedKeys.getLong(1));
                     }
+                }
+            }
+            // Sauvegarde les lignes de commande
+            if (order.getId() != null && order.getLines() != null && !order.getLines().isEmpty()) {
+                String sqlLine = "INSERT INTO ligne_commande (commande_id, menu_id, menu_nom, quantite, prix_unitaire, prix_ligne) VALUES (?, ?, ?, ?, ?, ?)";
+                try (PreparedStatement psLine = conn.prepareStatement(sqlLine)) {
+                    for (OrderLine line : order.getLines()) {
+                        psLine.setLong(1, order.getId());
+                        psLine.setLong(2, line.getMenuId());
+                        psLine.setString(3, line.getMenuName());
+                        psLine.setInt(4, line.getQuantity());
+                        psLine.setDouble(5, line.getUnitPrice());
+                        psLine.setDouble(6, line.getLinePrice());
+                        psLine.addBatch();
+                    }
+                    psLine.executeBatch();
                 }
             }
         } catch (SQLException e) {
@@ -90,8 +107,32 @@ public class JdbcOrderRepository implements OrderRepository {
                 list.add(order);
             }
         } catch (SQLException e) { e.printStackTrace(); }
+
+        // Récupere les lignes de chaque commande
+        if (!list.isEmpty()) {
+            try (Connection conn = getConnection()) {
+                String sqlLine = "SELECT * FROM ligne_commande WHERE commande_id = ?";
+                try (PreparedStatement psLine = conn.prepareStatement(sqlLine)) {
+                    for (Order order : list) {
+                        psLine.setLong(1, order.getId());
+                        try (ResultSet rsLine = psLine.executeQuery()) {
+                            List<OrderLine> lines = new ArrayList<>();
+                            while (rsLine.next()) {
+                                OrderLine line = new OrderLine();
+                                line.setMenuId(rsLine.getLong("menu_id"));
+                                line.setMenuName(rsLine.getString("menu_nom"));
+                                line.setQuantity(rsLine.getInt("quantite"));
+                                line.setUnitPrice(rsLine.getDouble("prix_unitaire"));
+                                line.setLinePrice(rsLine.getDouble("prix_ligne"));
+                                lines.add(line);
+                            }
+                            order.setLines(lines);
+                        }
+                    }
+                }
+            } catch (SQLException e) { e.printStackTrace(); }
+        }
         return list;
-    }
 
     @Override
     public Optional<Order> findById(Long id) {
@@ -100,10 +141,19 @@ public class JdbcOrderRepository implements OrderRepository {
 
     @Override
     public boolean deleteById(Long id) {
-        try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement("DELETE FROM commande WHERE id = ?")) {
-            ps.setLong(1, id);
-            return ps.executeUpdate() > 0;
-        } catch (SQLException e) { return false; }
+        try (Connection conn = getConnection()) {
+            // Suppression des lignes avant la commande pour évietr les problèmes de contrainte de clef etrangere
+            try (PreparedStatement psLines = conn.prepareStatement("DELETE FROM ligne_commande WHERE commande_id = ?")) {
+                psLines.setLong(1, id);
+                psLines.executeUpdate();
+            }
+            try (PreparedStatement psOrder = conn.prepareStatement("DELETE FROM commande WHERE id = ?")) {
+                psOrder.setLong(1, id);
+                return psOrder.executeUpdate() > 0;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 }
