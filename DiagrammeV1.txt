@@ -9,6 +9,7 @@ classDiagram
             -LocalDate deliveryDate
             -Double totalPrice
             -List~OrderLine~ lines
+            +calculateTotalPrice() void
         }
         class OrderLine {
             -Long menuId
@@ -36,6 +37,20 @@ classDiagram
             +deleteOrder(Long id) boolean
             +updateOrder(Long id, OrderUpdateInput input) Optional~Order~
         }
+        class OrderInput {
+            +Long subscriberId
+            +String deliveryAddress
+            +String deliveryDate
+            +List~OrderLineInput~ lines
+        }
+        class OrderUpdateInput {
+            +String deliveryAddress
+            +String deliveryDate
+        }
+        class OrderLineInput {
+            +Long menuId
+            +Integer quantity
+        }
     }
 
     %% Infrastructure Layer : Adapters (API and DB)
@@ -59,27 +74,22 @@ classDiagram
             +findById(Long id) Optional~Order~
             +deleteById(Long id) boolean
         }
-        class OrderInput {
-            +Long subscriberId
-            +String deliveryAddress
-            +String deliveryDate
-            +List~OrderLineInput~ lines
-        }
-        class OrderUpdateInput {
-            +String deliveryAddress
-            +String deliveryDate
-        }
-        class OrderLineInput {
-            +Long menuId
-            +Integer quantity
-        }
     }
 
     %% Relations
     Order "1" *-- "*" OrderLine : contains
     OrderInput "1" *-- "*" OrderLineInput : contains
+    
+    %% Injection et implémentation
     OrderService --> OrderRepository : uses
     JdbcOrderRepository ..|> OrderRepository : implements
     OrderResource --> OrderService : delegates
+    
+    %% Dépendances aux DTOs
     OrderService ..> OrderInput : reads
     OrderService ..> OrderUpdateInput : reads
+
+    %% Dépendances au Domaine (Nouveaux liens)
+    OrderService ..> Order : manipulates
+    OrderRepository ..> Order : handles
+    OrderResource ..> Order : returns
