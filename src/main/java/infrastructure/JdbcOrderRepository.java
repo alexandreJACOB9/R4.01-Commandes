@@ -2,23 +2,49 @@ package infrastructure;
 
 import application.OrderRepository;
 import domain.Order;
+
+import java.io.IOException;
+import java.io.InputStream;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Properties;
 
 /**
  * Implementation JDBC du depot des commandes.
  */
 public class JdbcOrderRepository implements OrderRepository {
-    private final String url = System.getenv("DB_HOST");
-    private final String user = System.getenv("DB_USER");
-    private final String password = System.getenv("DB_PASS");
+    private final String url;
+    private final String user;
+    private final String password;
+
+    public JdbcOrderRepository() {
+        Properties props = loadConfig();
+        this.url = props.getProperty("DB_URL");
+        this.user = props.getProperty("DB_USER");
+        this.password = props.getProperty("DB_PASS");
+    }
+
+    private Properties loadConfig() {
+        Properties props = new Properties();
+        try (InputStream input = getClass().getClassLoader().getResourceAsStream("config.env")) {
+            if (input == null) {
+                throw new RuntimeException("Impossible de charger le fichier config.env");
+            }
+            props.load(input);
+        } catch (IOException e) {
+            throw new RuntimeException("Erreur lors de la lecture du fichier config.env", e);
+        }
+        return props;
+    }
 
     private Connection getConnection() throws SQLException {
         try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
-        } catch (ClassNotFoundException e) { e.printStackTrace(); }
+            Class.forName("org.mariadb.jdbc.Driver");
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
         return DriverManager.getConnection(url, user, password);
     }
 
@@ -58,6 +84,9 @@ public class JdbcOrderRepository implements OrderRepository {
                 order.setId(rs.getLong("id"));
                 order.setSubscriberId(rs.getLong("abonne_id"));
                 order.setDeliveryAddress(rs.getString("adresse_livraison"));
+                order.setOrderDate(rs.getTimestamp("date_commande").toLocalDateTime());
+                order.setDeliveryDate(rs.getDate("date_livraison").toLocalDate());
+                order.setTotalPrice(rs.getDouble("prix_total"));
                 list.add(order);
             }
         } catch (SQLException e) { e.printStackTrace(); }
