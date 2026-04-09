@@ -1,7 +1,10 @@
 package infrastructure;
 
+import application.OrderInput;
 import application.OrderService;
+import application.OrderUpdateInput;
 import domain.Order;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -15,7 +18,8 @@ import java.util.List;
 @Consumes(MediaType.APPLICATION_JSON)
 public class OrderResource {
 
-    private final OrderService service = new OrderService(new JdbcOrderRepository());
+    @Inject
+    private OrderService service;
 
     @GET
     public List<Order> getAll(@QueryParam("subscriberId") Long subscriberId) {

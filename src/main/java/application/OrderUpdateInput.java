@@ -1,4 +1,4 @@
-package infrastructure;
+package application;
 
 /**
  * Modele d'entree pour la mise a jour d'une commande.

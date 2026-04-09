@@ -1,4 +1,4 @@
-package infrastructure;
+package application;
 
 /**
  * Modele d'entree pour une ligne de commande.

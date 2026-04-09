@@ -20,6 +20,14 @@ public class JdbcOrderRepository implements OrderRepository {
     private final String user;
     private final String password;
 
+    static {
+        try {
+            Class.forName("org.mariadb.jdbc.Driver");
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+
     public JdbcOrderRepository() {
         Properties props = loadConfig();
         this.url = props.getProperty("DB_URL");
@@ -41,11 +49,6 @@ public class JdbcOrderRepository implements OrderRepository {
     }
 
     private Connection getConnection() throws SQLException {
-        try {
-            Class.forName("org.mariadb.jdbc.Driver");
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        }
         return DriverManager.getConnection(url, user, password);
     }
 

@@ -2,9 +2,6 @@ package application;
 
 import domain.Order;
 import domain.OrderLine;
-import infrastructure.OrderInput;
-import infrastructure.OrderLineInput;
-import infrastructure.OrderUpdateInput;
 import jakarta.json.JsonObject;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
